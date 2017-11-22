@@ -42,3 +42,27 @@ int in_arg(char const *argv)
 	}
 	return (0);
 }
+
+int len(char const *str)
+{
+	int	len = 0;
+
+	if (str == 0)
+		return (-1);
+	while (*str++ != '\0')
+		len++;
+	return (len);
+}
+
+int move_arr(char *av[], int pos)
+{
+	char	*tmp = av[pos];
+	int	i = pos;
+
+	while (av[i + 1] != 0) {
+		av[i] = av[i + 1];
+		++i;
+	}
+	av[i] = tmp;
+	return (0);
+}

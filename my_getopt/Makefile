@@ -8,7 +8,7 @@
 CC=		gcc
 CP=		cp -r
 AR=		ar cr
-FLAGS=	-Wall -Wextra -I./include
+FLAGS=	-g3 -Wall -Wextra -I./include
 
 NAME=	libmy_getopt.a
 
@@ -17,7 +17,8 @@ INCLUDE=		$(INCLUDE_DIR)/my_getopt.h
 
 SRC_DIR=	$(realpath ./src)
 SRC=		$(SRC_DIR)/my_getopt.c                              \
-			$(SRC_DIR)/scan.c
+			$(SRC_DIR)/scan.c                                   \
+			$(SRC_DIR)/error.c
 
 OBJ=		$(SRC:.c=.o)
 
@@ -25,8 +26,8 @@ all:	$(NAME)
 
 $(NAME):	$(OBJ) $(INCLUDE)
 	$(AR) $(NAME) $(OBJ)
-#$(CP) $(NAME) ../
-#$(CP) $(INCLUDE) ../../include
+	$(CP) $(NAME) ../
+	$(CP) $(INCLUDE) ../../include
 
 .c.o:
 	$(CC) $(FLAGS) -o $@ -c $<

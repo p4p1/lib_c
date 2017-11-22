@@ -6,10 +6,11 @@
 */
 
 #include "my_getopt.h"
-#include <stdio.h>
 
 char *my_optarg = 0;
 int my_optopt = 0;
+int my_optind = 0;
+struct optarg *crnt = 0;
 
 static char *dup_str(char const *src)
 {
@@ -30,44 +31,81 @@ static char *dup_str(char const *src)
 	return (str);
 }
 
-static void init_get_opt(char const *optstring)
+static void sort_av(int ac, char *av[], const char *optstring)
 {
-	int	x = 0;
+	int	i = 1;
 
-	if (my_optopt == 0 || !in_optstring(optstring, (char)my_optopt)) {
-		my_optopt = *optstring;
-		return;
-	}
-	for (x = 0; optstring[x] != '\0'; x++) {
-		if (optstring[x] == my_optopt) {
-			my_optopt = optstring[x + 1];
-			break;
+	while (i < ac) {
+		if (av[i][0] == '-' && in_optstring(optstring, av[i][1]) &&
+				has_arg(optstring, av[i][1])) {
+			i += 2;
+		} else if (av[i][0] != '-') {
+			move_arr(av, i);
+			ac--;
+		} else {
+			++i;
 		}
-	}
-	if (my_optopt == ':') {
-		my_optopt = optstring[x + 2];
 	}
 }
 
-int my_getopt(int argc, char * const argv[], const char *optstring)
+static void init_get_opt(int ac, char *av[], const char *optstring)
 {
-	int	i = 0;
-	int	pos = 0;
+	int	x = 1;
+	struct optarg	*tmp = 0;
+
+	if (crnt == 0) {
+		sort_av(ac, av, optstring);
+		tmp = (struct optarg *)malloc(sizeof(struct optarg));
+		crnt = tmp;
+		while (x < ac) {
+			tmp->opt = dup_str(av[x]);
+			tmp->no = x;
+			tmp->next = (struct optarg *)malloc(
+						sizeof(struct optarg));
+			tmp = tmp->next;
+			x++;
+		}
+	}
+}
+
+static int get_argument(const char *optstring, char *tmp)
+{
+	if (crnt != 0 && has_arg(optstring, *tmp)) {
+		if (len(crnt->opt) != 2) {
+			my_optarg = dup_str(crnt->opt + 2);
+			return (0);
+		}
+		if (crnt->next != 0 && crnt->next->opt != 0) {
+			crnt = crnt->next;
+			my_optarg = crnt->opt;
+		} else {
+			*tmp = '?';
+		}
+	}
+	return (0);
+}
+
+int my_getopt(int argc, char *argv[], const char *optstring)
+{
+	char	tmp = 0;
 
 	if (argc == 1)
 		return (-1);
-	init_get_opt(optstring);
-	if (my_optopt == '\0')
-		return (-1);
-	while (i < argc) {
-		if ((pos = in_arg(argv[i])) != 0)
-			break;
-		++i;
+	init_get_opt(argc, argv, optstring);
+	my_optind = crnt->no;
+	if (crnt->opt != 0 && crnt->opt[0] == '-') {
+		if (!in_optstring(optstring, crnt->opt[1])) {
+			my_optopt = crnt->opt[1];
+			crnt = crnt->next;
+			my_puts(argv[0]);
+			return ('?');
+		} else {
+			tmp = crnt->opt[1];
+			my_optopt = tmp;
+			get_argument(optstring, &tmp);
+			crnt = crnt->next;
+			return (tmp);
+		}
 	}
-	if (i == argc)
-		return ('?');
-	my_optopt = argv[i][pos];
-	if (has_arg(optstring, (char)my_optopt))
-		my_optarg = dup_str(argv[i + 1]);
-	return (my_optopt);
+	return (-1);
 }
